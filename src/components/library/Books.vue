@@ -3,7 +3,7 @@
     <el-row style="height: 840px;">
       <search-bar @onSearch="searchResult" ref="searchBar"></search-bar>
       <el-tooltip effect="dark" placement="right"
-                  v-for="item in books.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+                  v-for="item in books.slice((currentPage-1)*pageSize,currentPage*pageSize)"
                   :key="item.bookId">
         <p slot="content" style="font-size: 14px;margin-bottom: 6px;">{{item.title}}</p>
         <p slot="content" style="font-size: 13px;margin-bottom: 6px">
@@ -40,8 +40,8 @@
       <el-pagination
         @current-change="handleCurrentChange"
         :current-page="currentPage"
-        :page-size="pagesize"
-        :total="books.length">
+        :page-size="pageSize"
+        :total="total">
       </el-pagination>
     </el-row>
 
@@ -58,13 +58,14 @@
             return {
                 books: [],
                 currentPage: 1,
-                pagesize: 17,
+                pageSize: 17,
+                total: 0,
                 collectBooks:[],
                 isAdmin:this.$store.state.isAdmin,
             }
         },
         mounted () {
-            this.pagesize = this.isAdmin ? '17':'18'//根据用户定义每页显示多少项
+            this.pageSize = this.isAdmin ? 17 : 18 //根据用户定义每页显示多少项
             this.loadBooks()
         },
         methods: {
@@ -72,9 +73,10 @@
             loadBooks() {
                 var _this = this
                 //返回所有书籍
-                this.$axios.get('/books').then(resp => {
+                this.$axios.get('/booksByPage/'+ this.pageSize + '/1').then(resp => {
                     if (resp && resp.status === 200) {
-                        _this.books = resp.data.data
+                        _this.books = resp.data.data.content
+                        _this.total = resp.data.data.totalSize
                     }
                 })
                 //返回收藏的书单
@@ -84,8 +86,15 @@
                     }
                 })
             },
-            handleCurrentChange: function (currentPage) {
-                this.currentPage = currentPage
+
+            handleCurrentChange (page) {
+                var _this = this
+                this.$axios.get('/booksByPage/'+  this.pageSize + '/' + page).then(resp => {
+                    if (resp && resp.status === 200) {
+                        _this.books = resp.data.data.content
+                        _this.total = resp.data.data.totalSize
+                    }
+                })
             },
 
             searchResult () {
